@@ -1,0 +1,39 @@
+package com.perceptron.spamorham;
+
+import java.util.HashMap;
+
+/**
+ * Implements the perceptron algorithm using the perceptron training rule for
+ * detection of an email as a ham or spam, with and without stop words.
+ * 
+ * @author tanvi
+ *
+ */
+public class Perceptron_SpamOrHam {
+
+	// A hashmap which maps every distinct word to a distinct number. The
+	// distinct number varies from 1 to n where n is the number of distinct
+	// words.
+	HashMap<String, Integer> wordToIndexMapping = new HashMap<String, Integer>();
+
+	// A 2-d integer matrix which stores the frequency of each word in each document.
+	// 0th column stores 0 for each entry (x0 = 0)
+	// The last column stores the output. Spam is 1 and Ham is 0. 
+	int dataMatrix[][];
+	
+	//Weight array that stores the weight of each word. weights[0] is the bias.
+	double weights[];
+	
+	//Learning rate
+	double eta;
+	
+	/**
+	 * Function to populate data in the dataMatrix.
+	 */
+	private void populateData(){
+		
+	}
+	public static void main(String args[]){
+		
+	}
+}
