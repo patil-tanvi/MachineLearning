@@ -1,0 +1,242 @@
+package com.imageclustering;
+
+/*** Author :Vibhav Gogate
+ The University of Texas at Dallas
+ *****/
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
+import javax.imageio.ImageIO;
+
+public class KMeans {
+	public static void main(String[] args) {
+		if (args.length < 3) {
+			System.out
+					.println("Usage: Kmeans <input-image> <k> <output-image>");
+			return;
+		}
+		try {
+			BufferedImage originalImage = ImageIO.read(new File(args[0]));
+			int k = Integer.parseInt(args[1]);
+			BufferedImage kmeansJpg = kmeans_helper(originalImage, k);
+			ImageIO.write(kmeansJpg, "jpg", new File(args[2]));
+
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+
+	private static BufferedImage kmeans_helper(BufferedImage originalImage,
+			int k) {
+		int w = originalImage.getWidth();
+		int h = originalImage.getHeight();
+		BufferedImage kmeansImage = new BufferedImage(w, h,
+				originalImage.getType());
+		Graphics2D g = kmeansImage.createGraphics();
+		g.drawImage(originalImage, 0, 0, w, h, null);
+		// Read rgb values from the image
+		int[] rgb = new int[w * h];
+		int count = 0;
+		for (int i = 0; i < w; i++) {
+			for (int j = 0; j < h; j++) {
+				rgb[count++] = kmeansImage.getRGB(i, j);
+			}
+		}
+		// Call kmeans algorithm: update the rgb values
+		kmeans(rgb, k);
+
+		// Write the new rgb values to the image
+		count = 0;
+		for (int i = 0; i < w; i++) {
+			for (int j = 0; j < h; j++) {
+				kmeansImage.setRGB(i, j, rgb[count++]);
+			}
+		}
+		return kmeansImage;
+	}
+
+	private static void kmeans(int[] rgb, int k) {
+		// Distinct colors in the image 		
+		HashSet<Color> distinctColors = new HashSet<Color>(); 		
+		ArrayList<Color> distinctColorsList = null;  		
+		// rgb array in Color datatype 		
+		Color[] pixelArray = new Color[rgb.length]; 		
+		Color[] newColors = new Color[rgb.length]; 		
+		// HashMap of clusters. Stores cluster color to original color mapping 		
+		HashMap<Color, ArrayList<Color>> clusters = new HashMap<Color, ArrayList<Color>>();  		
+		
+		for (int rgbArrayIterator = 0; rgbArrayIterator < rgb.length; rgbArrayIterator++) { 			
+			pixelArray[rgbArrayIterator] = new Color(rgb[rgbArrayIterator]); 			
+			if (!distinctColors.contains(pixelArray[rgbArrayIterator])) { 				
+				distinctColors.add(pixelArray[rgbArrayIterator]); 			
+				} 		
+			} 		
+		
+		distinctColorsList = new ArrayList<Color>(distinctColors);  		
+		for (int kIterator = 0; kIterator < k; kIterator++) { 			
+			Random r = new Random(); 			
+			int low = 0; 			
+			int high = distinctColors.size(); 			
+			int randomNo = r.nextInt(high - low) + low;  			
+			Color colorPicked = distinctColorsList.remove(randomNo); 			
+			// System.out.println(colorPicked.toString());  			
+			distinctColors.remove(colorPicked); 			
+			clusters.put(colorPicked, new ArrayList<Color>()); 		
+		}  		
+		
+		while (true) { 	
+			
+			// The color in the cluster closest to the color under consideration 			
+			Color closestColor = null; 			
+			// Distance between the color under consideration and cluster color 			
+			int distance; 			
+			// Minimum distance between the cluster color and color under consideration 			
+			int minDistance; 			
+			//Distinct colors in the cluster 			
+			Set<Color> clusterColorSet = clusters.keySet();  			
+			// For all the colors in the image 			
+			for (int pixelArrayIterator = 0; pixelArrayIterator < pixelArray.length; pixelArrayIterator++) {  				
+				minDistance = Integer.MAX_VALUE; 				
+				closestColor = null;  				
+				// For all the cluster colors. 				
+					for (Color clusterColor : clusterColorSet) {  					
+						// calculate the distance between red, green and blue 					
+						// component of cluster color and image color 					
+						int redDist, greenDist, blueDist; 					redDist = (int) Math.pow(clusterColor.getRed() 							- pixelArray[pixelArrayIterator].getRed(), 2); 					greenDist = (int) Math.pow(clusterColor.getGreen() 							- pixelArray[pixelArrayIterator].getGreen(), 2); 					blueDist = (int) Math.pow(clusterColor.getBlue() 							- pixelArray[pixelArrayIterator].getBlue(), 2); 					distance = redDist + greenDist + blueDist;  					
+						// If the distance between current cluster color and the 					
+						// image color is less than the earlier calculated 					// distances. 					
+						if (distance < minDistance) { 						minDistance = distance; 						closestColor = clusterColor; 					} 				}  				
+					//Add the image color to the cluster to which it is closest 				
+					clusters.get(closestColor).add(pixelArray[pixelArrayIterator]); 				
+					//Modify the new pixel array with the color closest to it. 				
+					newColors[pixelArrayIterator] = closestColor; 			} 			 			int noOfChangedClusterColors = 0; 			 
+					//			ArrayList<Color> removeColors = new ArrayList<Color>(); 			
+					ArrayList<Color> newClusterColors = new ArrayList<Color>(); 			 			
+					System.out.println(clusterColorSet.size()); 			 			
+					//Calculate the average color of every cluster 			
+					for(Color clusterColor : clusterColorSet){ 				 				
+						//The list of colors in the current cluster 				
+						ArrayList<Color> clusterColorList = clusters.get(clusterColor); 				int redAverage = 0, blueAverage = 0, greenAverage = 0; 				 				for(Color colorInTheList : clusterColorList){ 					redAverage += colorInTheList.getRed(); 					greenAverage += colorInTheList.getGreen(); 					blueAverage += colorInTheList.getBlue(); 				} 				 				int listLength = clusterColorList.size(); 				Color averageColor = new Color(redAverage/listLength, greenAverage/listLength, blueAverage/listLength); 				newClusterColors.add(averageColor); 				
+						//If the average color of the list is not same as the cluster color. //				System.out.println(closestColor.getRGB() + "  " + averageColor.getRGB()); 				
+						if(closestColor.getRGB() != averageColor.getRGB()){ 					noOfChangedClusterColors++; 				} 				 			} 			 			 			if(noOfChangedClusterColors == 0){ 				break; 			} 			 
+						//			for(Color colorToRemove : removeColors){ 
+						//				clusters.remove(colorToRemove); //			} 			 			
+						clusters = new HashMap<Color, ArrayList<Color>>(); 			 			for(Color colorToAdd : newClusterColors){ 				clusters.put(colorToAdd, new ArrayList<Color>()); 			} 		} 		 		for(int rgbIterator = 0; rgbIterator < rgb.length; rgbIterator++){ 			rgb[rgbIterator] = newColors[rgbIterator].getRGB(); 		}  	}		 
+					
+
+		}
+	}
+
+	// Your k-means code goes here
+	// Update the array rgb by assigning each entry in the rgb array to its
+	// cluster center
+	// private static void kmeans(int[] rgb, int k){
+	//
+	// // Get all pixels and colors
+	// Color[] pixels = new Color[rgb.length];
+	// HashSet<Integer> diffColors = new HashSet<>();
+	// for(int index=0;index<rgb.length;index++)
+	// {
+	// pixels[index]= new Color(rgb[index]);
+	// diffColors.add(rgb[index]);
+	// }
+	// // initialize k centers
+	// Color[] c;
+	//
+	// if(diffColors.size()<k)
+	// k=diffColors.size();
+	// c= new Color[k];
+	// ArrayList<Integer> distinctColorsList = new ArrayList<Integer>
+	// (diffColors);
+	// HashMap<Integer,ArrayList> clusters = new HashMap<>();
+	// for(int i=0;i<k;i++)
+	// {
+	// c[i]= new Color(distinctColorsList.remove( 0 +
+	// (int)(Math.random()*distinctColorsList.size())));
+	// clusters.put(i, new ArrayList<Integer>());
+	// }
+	// int min=Integer.MAX_VALUE;
+	// int minIndex=0;
+	// int distance=0;
+	// ArrayList<Integer> iterate;
+	// while(true)
+	// {
+	// //calculate distance from centers and add into the clusters which has
+	// minimum distance
+	// for(int index=0;index<rgb.length;index++)
+	// {
+	// min=Integer.MAX_VALUE;
+	// for(int i=0;i<k;i++)
+	// {
+	// distance = (int)(Math.pow(c[i].getRed()-
+	// pixels[index].getRed(),2)+Math.pow(c[i].getBlue()-
+	// pixels[index].getBlue(),2)+Math.pow(c[i].getGreen()-
+	// pixels[index].getGreen(),2));
+	// if(min>distance)
+	// {
+	// min=distance;
+	// minIndex=i;
+	// }
+	// }
+	// clusters.get(minIndex).add(index);
+	// }
+	//
+	// // Calculate Center mean
+	//
+	// int redAverage=0;
+	// int greenAverage=0;
+	//
+	// int blueAverage=0;
+	//
+	// int count=0;
+	// for(int i=0;i<k;i++)
+	// {
+	// redAverage=0;
+	// greenAverage=0;
+	// blueAverage=0;
+	// iterate = clusters.get(i);
+	// for(Integer pixel:iterate)
+	// {
+	// redAverage+=pixels[pixel].getRed();
+	// greenAverage+=pixels[pixel].getGreen();
+	// blueAverage+=pixels[pixel].getBlue();
+	// }
+	// Color average = new
+	// Color((int)redAverage/iterate.size(),(int)greenAverage/iterate.size(),(int)blueAverage/iterate.size());
+	// if(c[i].getRGB()==average.getRGB())
+	// count++;
+	// c[i]=average;
+	// System.out.println(c[i]);
+	// }
+	// if(count==k)
+	// break;
+	// for(int i=0;i<k;i++)
+	// {
+	// clusters.put(i, new ArrayList<Integer>());
+	// }
+	// }
+	//
+	// //Modifying rgb values as per clustering results
+	// System.out.println(rgb.length);
+	// for(int i=0;i<k;i++)
+	// {
+	// System.out.println(clusters.get(i).size());
+	// iterate = clusters.get(i);
+	// for(Integer pixel:iterate)
+	// {
+	// rgb[pixel] = c[i].getRGB();
+	// }
+	// }
+
+	// }
+
+}
