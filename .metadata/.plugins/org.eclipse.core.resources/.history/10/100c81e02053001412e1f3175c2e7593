@@ -1,9 +1,0 @@
-package com.perceptron.spamorham;
-
-import java.util.HashMap;
-
-public class Perceptron_SpamOrHam {
-
-	HashMap<String, Integer> hmap = new HashMap<String, Integer>();
-	
-}
